@@ -46,7 +46,7 @@ let notes = [
 ]
 
 
-app.get('/notes/:id', (req, res) => {
+app.get('/api/notes/:id', (req, res) => {
   const id = Number(req.params.id)
   const note = notes.find(note => note.id === id)
   if (note) 
@@ -55,13 +55,13 @@ app.get('/notes/:id', (req, res) => {
     res.status(404).end()
 })
 
-app.delete('/notes/:id', (req, res) => {
+app.delete('/api/notes/:id', (req, res) => {
   const id = Number(req.params.id)
   notes = filter(note => note !== id)
   res.status(204).end()
 })
 
-app.get('/notes', (req, res) => {
+app.get('/api/notes', (req, res) => {
   console.log('getting all notes');
   res.json(notes)
 })
@@ -72,7 +72,7 @@ const generateId = () => {
   return maxId + 1
 }
 
-app.post('/notes', (req, res) => {
+app.post('/api/notes', (req, res) => {
 
   // without bodyParser, req.body woud be undefined
   const body = req.body
@@ -93,7 +93,7 @@ app.post('/notes', (req, res) => {
   res.json(note)
 })
 
-app.put('/notes/:id', (req, res) => {
+app.put('/api/notes/:id', (req, res) => {
   const noteToUpdate = req.body
   // const id = Number(req.params.id)
   const existingNote = notes.find(note => note.id === noteToUpdate.id)
@@ -107,8 +107,8 @@ app.put('/notes/:id', (req, res) => {
     res.status(404).end()
 })
 
-app.get('/', (req, res) => {
-  res.send('<h1>HI!?</h1>')
+app.get('/api/', (req, res) => {
+  res.send('<h1>HI!? from the API</h1>')
 })
 
 // a ordem importa
