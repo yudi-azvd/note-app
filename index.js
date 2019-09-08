@@ -22,6 +22,8 @@ app.use(morgan((tokens, req, res) => {
 }))
 
 
+app.use(express.static('build'))
+
 let notes = [
   {
     id: 1, 
@@ -109,6 +111,7 @@ app.get('/', (req, res) => {
   res.send('<h1>HI!?</h1>')
 })
 
+// a ordem importa
 const PORT =  process.env.PORT || 3001
 app.listen(PORT, () => {
   console.log(`Server runnning on port ${PORT}`);
