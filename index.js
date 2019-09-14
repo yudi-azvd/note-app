@@ -1,15 +1,27 @@
+require('dotenv').config()
+
 const express = require('express')
 const app = express()
 const cors = require('cors')
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
 
+const Note = require('./models/note')
+
+
+/**
+ * Os middlewares são chamados na ordem em que são usados
+ */
+app.use(express.static('build'))
 app.use(bodyParser.json())
+app.use(errorHandler)
 app.use(cors())
+
 morgan.token('body', (req, res) => {
   // console.log('HERE', JSON.stringify(req.body));
   return JSON.stringify(req.body)
 })
+
 
 app.use(morgan((tokens, req, res) => {
   return [
@@ -21,59 +33,7 @@ app.use(morgan((tokens, req, res) => {
   ].join(' ')
 }))
 
-
-app.use(express.static('build'))
-
-let notes = [
-  {
-    id: 1, 
-    content: "HTML is easy",
-    date: "2019-05-30T17:30:31.098Z",
-    important: false
-  },
-  {
-    id: 2,
-    content: "Browser can execute only Javascript",
-    date: "2019-05-30T18:39:34.091Z",
-    important: false
-  },
-  {
-    id: 3,
-    content: "GET and POST are the most important methods of HTTP protocol",
-    date: "2019-05-30T19:20:14.298Z",
-    important: true
-  }
-]
-
-
-app.get('/api/notes/:id', (req, res) => {
-  const id = Number(req.params.id)
-  const note = notes.find(note => note.id === id)
-  if (note) 
-    res.json(note)
-  else 
-    res.status(404).end()
-})
-
-app.delete('/api/notes/:id', (req, res) => {
-  const id = Number(req.params.id)
-  notes = filter(note => note !== id)
-  res.status(204).end()
-})
-
-app.get('/api/notes', (req, res) => {
-  console.log('getting all notes');
-  res.json(notes)
-})
-
-const generateId = () => {
-  const maxId = notes.length > 0 ?
-  Math.max(...notes.map(n =>n.id)) : 0
-  return maxId + 1
-}
-
 app.post('/api/notes', (req, res) => {
-
   // without bodyParser, req.body woud be undefined
   const body = req.body
 
@@ -82,38 +42,87 @@ app.post('/api/notes', (req, res) => {
       error: 'content missing'
     })
   
-  const note = {
+  const note = new Note({
     content: body.content,
     important: body.important || false,
     date : new Date(),
-    id: generateId()
-  }
+  }) 
 
-  notes = notes.concat(note)
-  res.json(note)
+  note.save().then(savedNote => res.json(savedNote.toJSON()))
 })
 
-app.put('/api/notes/:id', (req, res) => {
-  const noteToUpdate = req.body
-  // const id = Number(req.params.id)
-  const existingNote = notes.find(note => note.id === noteToUpdate.id)
-  if(existingNote) {
-    notes = notes.map(note => note.id === existingNote.id ?
-      existingNote : note
-    )
-    res.json(noteToUpdate)
-  }
-  else 
-    res.status(404).end()
+
+
+app.get('/api/notes/:id', (req, res, next) => {
+  Note.findById(req.params.id)
+    .then(note => {
+      if(note) {
+        res.json(note.toJSON())
+      }
+      else {
+        res.status(404).end()
+      }
+    })
+    .catch(error => next(error))
+})
+
+app.delete('/api/notes/:id', (req, res) => {
+  Note.findByIdAndRemove(req.params.id)
+    .then(result => {
+      res.status(204).end()
+    })
+    .catch(error => next(error))
+})
+
+app.get('/api/notes', (req, res) => {
+  Note.find({}).then(notes => {
+    res.json(notes.map(note=> note.toJSON()))
+  })
+})
+
+
+app.put('/api/notes/:id', (req, res, next) => {
+  const body = req.body
+  const note = {
+    content:body.content,
+    important: body.important,
+  }  
+
+  Note.findByIdAndUpdate(req.params.id, note, { new: true })
+    .then(updatedNote => {
+      res.json(updatedNote.toJSON())
+    })
+    .catch(error => next(error))
 })
 
 app.get('/api/', (req, res) => {
-  res.send('<h1>HI!? from the API</h1>')
+  res.send('<h1>HI!? from the APIssas</h1>')
 })
 
-// a ordem importa
-const PORT =  process.env.PORT || 3001
+
+const unknownEndpoint = (req, res) => {
+  res.status(404).send({error: 'unknown endpoint'})
+}
+
+app.use(unknownEndpoint)
+
+const errorHandler = (error, req, res, next) => {
+  console.error(error.message)
+  if(error.name === 'CastError' && error.kind === 'ObjectId')
+  return res.status(400).send({error: 'malformatted id'})
+  next(error)
+}
+
+app.use(errorHandler)
+
+
+const PORT = process.env.PORT
 app.listen(PORT, () => {
-  console.log(`Server runnning on port ${PORT}`);
-  console.log('só pra mudar');
+  console.log(`> Server runnning on port ${PORT}`);
 })
+
+
+/**
+ * - testar também diretamente pelo backend (VScode REST, Postman, Insomnia...)
+ * - Integrar backend com frontend _uma_ funcionalidade por vez
+ */
