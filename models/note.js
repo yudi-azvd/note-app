@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 mongoose.set('useFindAndModify', false)
 // const password = 'fullstack'
 
-const url = process.env.MONGODB_URI
+const url = process.env.MONGODB_URI;
 
 console.log(`> connecting to ${url}\n`);
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
