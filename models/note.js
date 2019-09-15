@@ -2,15 +2,15 @@ const mongoose = require('mongoose')
 
 mongoose.set('useFindAndModify', false)
 
-const url = process.env.MONGODB_URI;
+const url = process.env.MONGODB_URI
 
-console.log(`> connecting to ${url}\n`);
+console.log(`> connecting to ${url}\n`)
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(result => {
+  .then(() => {
     console.log('> connected to MongoDB\n')
   })
   .catch(error => {
-    console.log('> Error in connectingo MongoDB:',  error.message);
+    console.log('> Error in connectingo MongoDB:',  error.message)
   })
 
 

@@ -8,9 +8,6 @@ const morgan = require('morgan')
 
 const Note = require('./models/note')
 
-
-
-
 /**
  * Os middlewares são chamados na ordem em que são usados
  */
@@ -18,11 +15,10 @@ app.use(express.static('build'))
 app.use(bodyParser.json())
 app.use(cors())
 
-morgan.token('body', (req, res) => {
-  // console.log('HERE', JSON.stringify(req.body));
+morgan.token('body', (req) => {
+  // console.log('HERE', JSON.stringify(req.body))
   return JSON.stringify(req.body)
 })
-
 
 app.use(morgan((tokens, req, res) => {
   return [
@@ -40,13 +36,13 @@ app.use(morgan((tokens, req, res) => {
 app.post('/api/notes', (req, res, next) => {
   // without bodyParser, req.body woud be undefined
   const body = req.body
-  console.log(body);
+  console.log(body)
 
   const note = new Note({
     content: body.content,
     important: body.important || false,
-    date : new Date(),
-  }) 
+    date : new Date()
+  })
 
   note // _then_ method of promise also returns a promise
     .save()
@@ -70,9 +66,9 @@ app.get('/api/notes/:id', (req, res, next) => {
     .catch(error => next(error))
 })
 
-app.delete('/api/notes/:id', (req, res) => {
+app.delete('/api/notes/:id', (req, res, next) => {
   Note.findByIdAndRemove(req.params.id)
-    .then(result => {
+    .then(() => {
       res.status(204).end()
     })
     .catch(error => next(error))
@@ -80,7 +76,7 @@ app.delete('/api/notes/:id', (req, res) => {
 
 app.get('/api/notes', (req, res) => {
   Note.find({}).then(notes => {
-    res.json(notes.map(note=> note.toJSON()))
+    res.json(notes.map(note => note.toJSON()))
   })
 })
 
@@ -90,7 +86,7 @@ app.put('/api/notes/:id', (req, res, next) => {
   const note = {
     content:body.content,
     important: body.important,
-  }  
+  }
 
   Note.findByIdAndUpdate(req.params.id, note, { new: true })
     .then(updatedNote => {
@@ -105,7 +101,7 @@ app.get('/api/', (req, res) => {
 
 
 const unknownEndpoint = (req, res) => {
-  res.status(404).send({error: 'unknown endpoint'})
+  res.status(404).send({ error: 'unknown endpoint' })
 }
 
 app.use(unknownEndpoint)
@@ -113,11 +109,11 @@ app.use(unknownEndpoint)
 const errorHandler = (error, req, res, next) => {
   console.error('error.message from ERROR_HANLDER')
   if(error.name === 'CastError' && error.kind === 'ObjectId') {
-    return res.status(400).send({error: 'malformatted id'})
+    return res.status(400).send({ error: 'malformatted id' })
   }
   else if (error.name === 'ValidationError') {
-    console.log({error: error.message})
-    return res.status(400).send({error: error.message})
+    console.log({ error: error.message })
+    return res.status(400).send({ error: error.message })
   }
 
   console.log('NOT BEING HANDLED')
@@ -129,7 +125,7 @@ app.use(errorHandler)
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
-  console.log(`> Server runnning on port ${PORT}`);
+  console.log(`> Server runnning on port ${PORT}`)
 })
 
 
