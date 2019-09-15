@@ -1,7 +1,6 @@
 const mongoose = require('mongoose')
 
 mongoose.set('useFindAndModify', false)
-// const password = 'fullstack'
 
 const url = process.env.MONGODB_URI;
 
@@ -18,8 +17,15 @@ mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
 // MongoDB é sem esquema
 // o esquema é a nível de APLICAÇÃO
 const noteSchema = new mongoose.Schema({
-  content: String,
-  date: Date,
+  content: {
+    type: String,
+    minlength: 5,
+    required: true
+  },
+  date: {
+    type: Date,
+    required: true
+  },
   important: Boolean
 })
 

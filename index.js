@@ -9,12 +9,13 @@ const morgan = require('morgan')
 const Note = require('./models/note')
 
 
+
+
 /**
  * Os middlewares são chamados na ordem em que são usados
  */
 app.use(express.static('build'))
 app.use(bodyParser.json())
-app.use(errorHandler)
 app.use(cors())
 
 morgan.token('body', (req, res) => {
@@ -25,6 +26,7 @@ morgan.token('body', (req, res) => {
 
 app.use(morgan((tokens, req, res) => {
   return [
+    '\n>>',
     tokens.method(req, res),
     tokens.url(req, res),
     tokens.status(req, res), '-',
@@ -33,22 +35,24 @@ app.use(morgan((tokens, req, res) => {
   ].join(' ')
 }))
 
-app.post('/api/notes', (req, res) => {
+
+
+app.post('/api/notes', (req, res, next) => {
   // without bodyParser, req.body woud be undefined
   const body = req.body
+  console.log(body);
 
-  if(!body.content)
-    return res.status(404).json({
-      error: 'content missing'
-    })
-  
   const note = new Note({
     content: body.content,
     important: body.important || false,
     date : new Date(),
   }) 
 
-  note.save().then(savedNote => res.json(savedNote.toJSON()))
+  note // _then_ method of promise also returns a promise
+    .save()
+    .then(savedNote => savedNote.toJSON())
+    .then(savedAndReturnedNote => res.json(savedAndReturnedNote))
+    .catch(error => next(error))
 })
 
 
@@ -107,9 +111,16 @@ const unknownEndpoint = (req, res) => {
 app.use(unknownEndpoint)
 
 const errorHandler = (error, req, res, next) => {
-  console.error(error.message)
-  if(error.name === 'CastError' && error.kind === 'ObjectId')
-  return res.status(400).send({error: 'malformatted id'})
+  console.error('error.message from ERROR_HANLDER')
+  if(error.name === 'CastError' && error.kind === 'ObjectId') {
+    return res.status(400).send({error: 'malformatted id'})
+  }
+  else if (error.name === 'ValidationError') {
+    console.log({error: error.message})
+    return res.status(400).send({error: error.message})
+  }
+
+  console.log('NOT BEING HANDLED')
   next(error)
 }
 
