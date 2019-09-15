@@ -2,18 +2,6 @@ const mongoose = require('mongoose')
 
 mongoose.set('useFindAndModify', false)
 
-const url = process.env.MONGODB_URI
-
-console.log(`> connecting to ${url}\n`)
-mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => {
-    console.log('> connected to MongoDB\n')
-  })
-  .catch(error => {
-    console.log('> Error in connectingo MongoDB:',  error.message)
-  })
-
-
 // MongoDB é sem esquema
 // o esquema é a nível de APLICAÇÃO
 const noteSchema = new mongoose.Schema({
@@ -37,7 +25,6 @@ noteSchema.set('toJSON', {
     delete returnedObject.__v
   }
 })
-
 
 module.exports = mongoose.model('Note', noteSchema)
 
