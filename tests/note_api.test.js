@@ -19,8 +19,6 @@ const app = require('../app')
  * in describe blocks
  */
 
-
-
 /**
  * imports the express app which is wrapped by the 
  * supertest function, so called _superagent object_.
@@ -97,8 +95,6 @@ describe('when there is initially some notes saved', () => {
     test('fails with statuscode 404 if note does not exist', async () => {
       const validNonexistingId = await helper.nonExistingId()
   
-      console.log(validNonexistingId)
-  
       await api
         .get(`/api/notes/${validNonexistingId}`)
         .expect(404)
@@ -123,7 +119,7 @@ describe('when there is initially some notes saved', () => {
       await api
         .post('/api/notes')
         .send(newNote)
-        .expect(200)
+        .expect(201)
         .expect('Content-Type', /application\/json/)
   
   
