@@ -12,7 +12,7 @@ const noteSchema = new mongoose.Schema({
   },
   date: {
     type: Date,
-    required: true
+    // required: true
   },
   important: Boolean
 })

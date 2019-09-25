@@ -1,28 +1,40 @@
 const notesRouter = require('express').Router()
 const Note = require('../models/note')
 
-
 notesRouter.get('/', (req, res) => {
   Note.find({}).then(notes => {
     res.json(notes.map(note => note.toJSON()))
   })
 })
 
-notesRouter.get('/:id', (req, res, next) => {
-  Note.findById(req.params.id)
-    .then(note => {
-      if(note) {
-        res.json(note.toJSON())
-      }
-      else {
-        res.status(404).end()
-      }
-    })
-    .catch(error => next(error))
+
+notesRouter.get('/:id', async (req, res, next) => {
+  // Note.findById(req.params.id)
+  //   .then(note => {
+  //     if(note) {
+  //       res.json(note.toJSON())
+  //     }
+  //     else {
+  //       res.status(404).end()
+  //     }
+  //   })
+  //   .catch(error => next(error))
+  try {
+    const note = await Note.findById(req.params.id)
+
+    if (note)
+      res.json(note.toJSON())
+    else 
+      res.status(404).end()
+  }
+  catch (exception) {
+    next(exception)
+  }
+
 })
 
 
-notesRouter.post('/', (req, res, next) => {
+notesRouter.post('/', async (req, res, next) => {
   // without bodyParser, req.body woud be undefined
   const body = req.body
 
@@ -32,20 +44,35 @@ notesRouter.post('/', (req, res, next) => {
     date : new Date()
   })
 
-  note // _then_ method of promise also returns a promise
-    .save()
-    .then(savedNote => savedNote.toJSON())
-    .then(savedAndReturnedNote => res.json(savedAndReturnedNote))
-    .catch(error => next(error))
+  // note // _then_ method of promise also returns a promise
+  //   .save()
+  //   .then(savedNote => savedNote.toJSON())
+  //   .then(savedAndReturnedNote => res.json(savedAndReturnedNote))
+  //   .catch(error => next(error))
+
+  try {
+    const savedNote = await note.save()
+    res.json(savedNote.toJSON())
+  }
+  catch(exception) {
+    next(exception)
+  }
 })
 
 
-notesRouter.delete('/:id', (req, res, next) => {
-  Note.findByIdAndRemove(req.params.id)
-    .then(() => {
-      res.status(204).end()
-    })
-    .catch(error => next(error))
+notesRouter.delete('/:id', async (req, res, next) => {
+  try {
+    await Note.findByIdAndRemove(req.params.id)
+    res.status(204).end()
+  } 
+  catch (exception) {
+    next(exception)
+  }
+  // Note.findByIdAndRemove(req.params.id)
+  //   .then(() => {
+  //     res.status(204).end()
+  //   })
+  //   .catch(error => next(error))
 })
 
 
