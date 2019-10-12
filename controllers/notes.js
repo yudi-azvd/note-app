@@ -1,16 +1,20 @@
+const jwt = require('jsonwebtoken')
 const notesRouter = require('express').Router()
 
 const Note = require('../models/note')
 const User = require('../models/user')
 
-notesRouter.get('/', (req, res) => {
-  Note.find({}).then(notes => {
-    res.json(notes.map(note => note.toJSON()))
-  })
+
+notesRouter.get('/', async (request, response) => {
+  const notes = await Note
+    .find({})
+    .populate('user', { username: 1, name: 1 })
+
+  response.json(notes.map(note => note.toJSON()))
 })
 
 
-notesRouter.get('/:id', async (req, res, next) => {
+notesRouter.get('/:id', async (request, response, next) => {
   // Note.findById(req.params.id)
   //   .then(note => {
   //     if(note) {
@@ -22,43 +26,50 @@ notesRouter.get('/:id', async (req, res, next) => {
   //   })
   //   .catch(error => next(error))
   try {
-    const note = await Note.findById(req.params.id)
+    const note = await Note.findById(request.params.id)
 
     if (note)
-      res.json(note.toJSON())
+      response.json(note.toJSON())
     else 
-      res.status(404).end()
+      response.status(404).end()
   }
   catch (exception) {
     next(exception)
   }
-
 })
 
 
-notesRouter.post('/', async (req, res, next) => {
+const getTokenFrom = request => {
+  const authorization = request.get('authorization')
+  if(authorization && authorization.toLowerCase().startsWith('bearer '))
+    return authorization.substring(7)
+  return null
+}
+
+notesRouter.post('/', async (request, response, next) => {
   // without bodyParser, req.body woud be undefined
-  const body = req.body
-  const user = await User.findById(body.userId)
-
-  const note = new Note({
-    content: body.content,
-    important: body.important || false,
-    date : new Date(),
-    user: user._id
-  })
-
-  // note // _then_ method of promise also returns a promise
-  //   .save()
-  //   .then(savedNote => savedNote.toJSON())
-  //   .then(savedAndReturnedNote => res.json(savedAndReturnedNote))
-  //   .catch(error => next(error))
+  const body = request.body
+  const token = getTokenFrom(request)
 
   try {
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    console.log('> decodedToken', decodedToken)
+    if(!token || !decodedToken.id)
+      return response.status(401).json({ error: 'token mimssing or invalid' })
+
+    const user = await User.findById(decodedToken.id)
+
+    const note = new Note({
+      content: body.content,
+      important: body.important || false,
+      date : new Date(),
+      user: user._id
+    })
+    
     const savedNote = await note.save()
     user.notes = user.notes.concat(savedNote._id)
     await user.save()
-    res.status(201).json(savedNote.toJSON())
+    response.status(201).json(savedNote.toJSON())
   }
   catch(exception) {
     next(exception)
@@ -82,16 +93,16 @@ notesRouter.delete('/:id', async (req, res, next) => {
 })
 
 
-notesRouter.put('/:id', (req, res, next) => {
-  const body = req.body
+notesRouter.put('/:id', (request, response, next) => {
+  const body = request.body
   const note = {
     content:body.content,
     important: body.important,
   }
 
-  Note.findByIdAndUpdate(req.params.id, note, { new: true })
+  Note.findByIdAndUpdate(request.params.id, note, { new: true })
     .then(updatedNote => {
-      res.json(updatedNote.toJSON())
+      response.json(updatedNote.toJSON())
     })
     .catch(error => next(error))
 })
